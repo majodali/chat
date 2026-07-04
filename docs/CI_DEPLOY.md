@@ -84,11 +84,12 @@ In the repo → **Settings**:
 
 **Variables** (same page → *Variables*):
 
-| Variable       | Value                                               |
-| -------------- | --------------------------------------------------- |
-| `AWS_REGION`   | `us-east-1` (required for the custom domain)        |
-| `DOMAIN_NAME`  | `liddle.cloud` (or leave unset to use CloudFront)   |
-| `INCLUDE_WWW`  | `true` or `false`                                   |
+| Variable            | Value                                                   |
+| ------------------- | ------------------------------------------------------- |
+| `AWS_REGION`        | The region your `liddle.cloud` bucket lives in          |
+| `SITE_BUCKET_NAME`  | `liddle.cloud` (optional — this is the default)         |
+| `SITE_PATH_PREFIX`  | `chat` (optional — this is the default)                 |
+| `SITE_BASE_URL`     | `http://liddle.cloud/chat` (optional; for the output)   |
 
 **(Optional) Environment protection:** the workflow targets a `production`
 environment. Create it under Settings → Environments to add approval gates or

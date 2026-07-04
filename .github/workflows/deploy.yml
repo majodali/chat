@@ -33,8 +33,9 @@ jobs:
     env:
       AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
       CDK_DEFAULT_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
-      DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
-      INCLUDE_WWW: ${{ vars.INCLUDE_WWW || 'false' }}
+      SITE_BUCKET_NAME: ${{ vars.SITE_BUCKET_NAME || 'liddle.cloud' }}
+      SITE_PATH_PREFIX: ${{ vars.SITE_PATH_PREFIX || 'chat' }}
+      SITE_BASE_URL: ${{ vars.SITE_BASE_URL }}
       ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
       ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
     steps:

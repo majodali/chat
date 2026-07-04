@@ -1,6 +1,6 @@
-# Liddle Chat
+# Family Chat
 
-A small, self-hosted, **invite-only** chat app for `liddle.cloud`. Built so kids
+A small, self-hosted, **invite-only** chat app. Built so kids
 (and close friends) can message each other from any web browser — no phone or app
 store required. Fully **serverless on AWS**, so it costs almost nothing when idle
 and there is no server to patch.
@@ -16,12 +16,15 @@ and there is no server to patch.
 
 ## Architecture
 
-Everything is serverless and AWS-native:
+Everything is serverless and AWS-native. The web app lives at
+**`liddle.cloud/chat`** — its static files are deployed into the *existing*
+`liddle.cloud` S3 bucket under a `chat/` sub-folder, so the rest of the site is
+untouched.
 
 ```
-Browser (liddle.cloud)
+Browser
    │
-   ├─ Static SPA  ──►  S3 + CloudFront + ACM + Route53      (the web app)
+   ├─ Static SPA  ──►  existing liddle.cloud S3 bucket, under /chat   (the web app)
    │
    ├─ REST calls  ──►  API Gateway (HTTP API) ─► Lambda ─► DynamoDB / S3
    │                    login, admin, rooms, history, upload URLs
@@ -32,7 +35,7 @@ Browser (liddle.cloud)
 
 | Concern        | Technology                                   |
 | -------------- | -------------------------------------------- |
-| Web hosting    | S3 + CloudFront + Route53 + ACM              |
+| Web hosting    | Existing `liddle.cloud` S3 bucket, under `/chat` |
 | REST API       | API Gateway HTTP API + Lambda                |
 | Realtime       | API Gateway WebSocket API + Lambda           |
 | Database       | DynamoDB (on-demand)                         |
