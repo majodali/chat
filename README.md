@@ -1,6 +1,6 @@
-# Liddle Chat
+# Family Chat
 
-A small, self-hosted, **invite-only** chat app for `liddle.cloud`. Built so kids
+A small, self-hosted, **invite-only** chat app. Built so kids
 (and close friends) can message each other from any web browser — no phone or app
 store required. Fully **serverless on AWS**, so it costs almost nothing when idle
 and there is no server to patch.
@@ -19,7 +19,7 @@ and there is no server to patch.
 Everything is serverless and AWS-native:
 
 ```
-Browser (liddle.cloud)
+Browser
    │
    ├─ Static SPA  ──►  S3 + CloudFront + ACM + Route53      (the web app)
    │
