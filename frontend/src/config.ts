@@ -12,7 +12,11 @@ let cached: RuntimeConfig | null = null;
 export async function loadRuntimeConfig(): Promise<RuntimeConfig> {
   if (cached) return cached;
   try {
-    const res = await fetch("/config.json", { cache: "no-store" });
+    // Relative to the app's base path (/chat/), so it resolves to
+    // /chat/config.json rather than the site root.
+    const res = await fetch(`${import.meta.env.BASE_URL}config.json`, {
+      cache: "no-store",
+    });
     if (res.ok) {
       const data = (await res.json()) as Partial<RuntimeConfig>;
       if (data.apiUrl && data.wsUrl) {

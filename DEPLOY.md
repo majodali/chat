@@ -17,11 +17,11 @@ given access to your AWS account by anyone else.
   aws sts get-caller-identity   # should print your account
   ```
 - **Node.js 20+** and npm.
-- **Your domain `liddle.cloud` managed by Route 53** (a *hosted zone* in this
-  same AWS account). If your domain is registered elsewhere, create a hosted
-  zone in Route 53 and point your registrar's nameservers at it. You can skip
-  the domain entirely for a first test (see step 5).
-- Deploy in **`us-east-1`** — CloudFront requires its TLS certificate there.
+- **Your existing `liddle.cloud` S3 bucket** that already serves the static
+  site. The chat app is deployed into it under a `chat/` sub-folder — nothing
+  else in the bucket is modified or deleted.
+- Deploy in the **same AWS region** your `liddle.cloud` bucket lives in (set
+  `CDK_DEFAULT_REGION` / `AWS_REGION` accordingly).
 
 ## 2. Get the code + install
 
@@ -40,12 +40,13 @@ cp infra/.env.example infra/.env
 
 Set at minimum:
 
-| Variable         | What it is                                                    |
-| ---------------- | ------------------------------------------------------------- |
-| `ADMIN_USERNAME` | The first admin login (you). Used to create everyone else.    |
-| `ADMIN_PASSWORD` | A strong password for that admin account.                     |
-| `DOMAIN_NAME`    | `liddle.cloud` (or blank to use the CloudFront URL for now).  |
-| `INCLUDE_WWW`    | `true` to also serve `www.liddle.cloud`.                      |
+| Variable           | What it is                                                    |
+| ------------------ | ------------------------------------------------------------- |
+| `ADMIN_USERNAME`   | The first admin login (you). Used to create everyone else.    |
+| `ADMIN_PASSWORD`   | A strong password for that admin account.                     |
+| `SITE_BUCKET_NAME` | Your existing site bucket (defaults to `liddle.cloud`).       |
+| `SITE_PATH_PREFIX` | Sub-folder to host under (defaults to `chat`).                |
+| `CDK_DEFAULT_REGION` | The region your bucket + resources live in.                 |
 
 ## 4. Bootstrap CDK (first time per account/region only)
 
@@ -65,21 +66,19 @@ npm run deploy              # provision + deploy everything
 The deploy prints outputs like:
 
 ```
-LiddleChat.SiteUrl        = https://liddle.cloud
-LiddleChat.CloudFrontUrl  = https://d1234abcd.cloudfront.net
+LiddleChat.SiteUrl        = http://liddle.cloud/chat
 LiddleChat.ApiUrl         = https://xxxx.execute-api.us-east-1.amazonaws.com
 LiddleChat.WebSocketUrl   = wss://yyyy.execute-api.us-east-1.amazonaws.com/prod
 ```
 
-- **With a domain:** CDK creates the TLS cert (DNS-validated automatically since
-  the hosted zone is in the same account) and the Route 53 alias record. DNS +
-  certificate propagation can take a few minutes on the very first deploy.
-- **Without a domain:** open the `CloudFrontUrl` to use the app right away. Add
-  `DOMAIN_NAME` later and re-deploy to attach the custom domain.
+The app's static files are written to `s3://liddle.cloud/chat/…` and served by
+your existing site hosting. The `SiteUrl` is live as soon as the deploy
+finishes (allow a moment for any browser cache). The `ApiUrl` and
+`WebSocketUrl` are called by the app directly — you don't need to open them.
 
 ## 6. First login
 
-1. Open your site URL.
+1. Open **http://liddle.cloud/chat**.
 2. Sign in with the `ADMIN_USERNAME` / `ADMIN_PASSWORD` from your `.env`.
 3. Click **Admin** (bottom-left) → **Create account** to add your kids and
    friends. Give each a username + password. No email or phone needed.
@@ -119,18 +118,22 @@ deleted by hand in the AWS console if you truly want them gone:
 - The image S3 bucket (family photos)
 - The JWT secret
 
-The site bucket, CloudFront distribution, and connections table are removed
-automatically.
+The connections table is removed automatically. Your **existing `liddle.cloud`
+bucket is never deleted** — it's only imported, not managed by this stack. The
+app's files remain under `chat/`; delete that folder by hand if you want to
+remove the app from the site.
 
 ## Troubleshooting
 
 - **`cdk bootstrap` errors about credentials** — run `aws sts get-caller-identity`
   and make sure the right profile/region is active (`AWS_PROFILE`, `AWS_REGION`).
-- **Certificate stuck "pending validation"** — confirm `liddle.cloud`'s
-  nameservers at your registrar match the Route 53 hosted zone's NS records.
-- **Website loads but can't log in / connect** — the SPA reads `/config.json`
-  for the API + WebSocket URLs; a hard refresh clears a stale cached copy.
-- **Region** — everything must be in `us-east-1` when using the custom domain.
+- **`chat/` page 404s** — confirm the deploy wrote objects to
+  `s3://liddle.cloud/chat/index.html`, and that your site serves that key. With
+  S3 static-website hosting, `…/chat` (no trailing slash) redirects to `…/chat/`.
+- **Website loads but can't log in / connect** — the SPA reads
+  `/chat/config.json` for the API + WebSocket URLs; a hard refresh clears a
+  stale cached copy.
+- **Region** — deploy in the same region as your `liddle.cloud` bucket.
 
 ## Cost
 

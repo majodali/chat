@@ -15,12 +15,7 @@ import * as lambda from "aws-cdk-lib/aws-lambda";
 import * as apigw from "aws-cdk-lib/aws-apigatewayv2";
 import * as apigwInteg from "aws-cdk-lib/aws-apigatewayv2-integrations";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
-import * as cloudfront from "aws-cdk-lib/aws-cloudfront";
-import * as origins from "aws-cdk-lib/aws-cloudfront-origins";
 import * as s3deploy from "aws-cdk-lib/aws-s3-deployment";
-import * as route53 from "aws-cdk-lib/aws-route53";
-import * as targets from "aws-cdk-lib/aws-route53-targets";
-import * as acm from "aws-cdk-lib/aws-certificatemanager";
 import * as customResources from "aws-cdk-lib/custom-resources";
 import * as logs from "aws-cdk-lib/aws-logs";
 import type { AppConfig } from "./config";
@@ -254,80 +249,29 @@ export class ChatStack extends Stack {
     }
 
     // ---------------------------------------------------------------
-    // Frontend hosting: S3 + CloudFront (+ optional custom domain)
+    // Frontend hosting: deploy INTO the existing liddle.cloud bucket under a
+    // sub-folder (e.g. chat/). The rest of the site is never touched.
     // ---------------------------------------------------------------
-    const siteBucket = new s3.Bucket(this, "SiteBucket", {
-      blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
-      encryption: s3.BucketEncryption.S3_MANAGED,
-      removalPolicy: RemovalPolicy.DESTROY, // static assets are rebuildable
-      autoDeleteObjects: true,
-    });
-
-    // Optional custom domain wiring.
-    let certificate: acm.ICertificate | undefined;
-    let domainNames: string[] | undefined;
-    let hostedZone: route53.IHostedZone | undefined;
-
-    if (config.domainName) {
-      hostedZone = route53.HostedZone.fromLookup(this, "Zone", {
-        domainName: config.domainName,
-      });
-      domainNames = [config.domainName];
-      if (config.includeWww) domainNames.push(`www.${config.domainName}`);
-      certificate = new acm.Certificate(this, "SiteCert", {
-        domainName: config.domainName,
-        subjectAlternativeNames: config.includeWww
-          ? [`www.${config.domainName}`]
-          : undefined,
-        validation: acm.CertificateValidation.fromDns(hostedZone),
-      });
-    }
-
-    const distribution = new cloudfront.Distribution(this, "SiteDistribution", {
-      defaultBehavior: {
-        origin: origins.S3BucketOrigin.withOriginAccessControl(siteBucket),
-        viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
-        cachePolicy: cloudfront.CachePolicy.CACHING_OPTIMIZED,
-      },
-      defaultRootObject: "index.html",
-      // SPA routing: serve index.html for client-side routes / missing keys.
-      errorResponses: [
-        { httpStatus: 403, responseHttpStatus: 200, responsePagePath: "/index.html" },
-        { httpStatus: 404, responseHttpStatus: 200, responsePagePath: "/index.html" },
-      ],
-      domainNames,
-      certificate,
-      priceClass: cloudfront.PriceClass.PRICE_CLASS_100, // cheapest, NA/EU edges
-    });
-
-    if (hostedZone && config.domainName) {
-      new route53.ARecord(this, "AliasRecord", {
-        zone: hostedZone,
-        recordName: config.domainName,
-        target: route53.RecordTarget.fromAlias(
-          new targets.CloudFrontTarget(distribution)
-        ),
-      });
-      if (config.includeWww) {
-        new route53.ARecord(this, "WwwAliasRecord", {
-          zone: hostedZone,
-          recordName: `www.${config.domainName}`,
-          target: route53.RecordTarget.fromAlias(
-            new targets.CloudFrontTarget(distribution)
-          ),
-        });
-      }
-    }
+    const siteBucket = s3.Bucket.fromBucketName(
+      this,
+      "ExistingSiteBucket",
+      config.siteBucketName
+    );
 
     // Runtime config the SPA fetches on load, so the build never hardcodes URLs.
     const wsUrl = wsStage.url; // wss://.../prod
     const apiUrl = httpApi.apiEndpoint; // https://xxxx.execute-api...
 
-    // Deploy the built SPA + a generated config.json into the site bucket.
-    new s3deploy.BucketDeployment(this, "DeploySite", {
+    // Deploy the built SPA + a generated config.json under the chat/ prefix.
+    new s3deploy.BucketDeployment(this, "DeployChatSite", {
       destinationBucket: siteBucket,
-      distribution,
-      distributionPaths: ["/*"],
+      destinationKeyPrefix: config.sitePathPrefix, // -> <bucket>/chat/...
+      // Do NOT prune: never delete anything else in the shared bucket. Old
+      // content-hashed asset files under chat/ may linger but are harmless.
+      prune: false,
+      // Served straight from S3 (no CDN) — no-cache keeps index.html/config.json
+      // fresh so a new deploy is picked up immediately. Assets are hashed anyway.
+      cacheControl: [s3deploy.CacheControl.fromString("no-cache")],
       sources: [
         s3deploy.Source.asset(FRONTEND_DIST),
         s3deploy.Source.jsonData("config.json", { apiUrl, wsUrl }),
@@ -354,13 +298,8 @@ export class ChatStack extends Stack {
     // Outputs
     // ---------------------------------------------------------------
     new CfnOutput(this, "SiteUrl", {
-      value: config.domainName
-        ? `https://${config.domainName}`
-        : `https://${distribution.distributionDomainName}`,
+      value: config.siteBaseUrl,
       description: "Open this to use the chat app",
-    });
-    new CfnOutput(this, "CloudFrontUrl", {
-      value: `https://${distribution.distributionDomainName}`,
     });
     new CfnOutput(this, "ApiUrl", { value: apiUrl });
     new CfnOutput(this, "WebSocketUrl", { value: wsUrl });
