@@ -132,11 +132,14 @@ export class ChatStack extends Stack {
         environment: commonEnv,
         logRetention: logs.RetentionDays.TWO_WEEKS,
         bundling: {
-          format: lambdaNode.OutputFormat.ESM,
+          // CommonJS output: bcryptjs (and other deps) use dynamic require()
+          // of Node builtins like "buffer"/"crypto", which esbuild's ESM output
+          // rejects at runtime ("Dynamic require of ... is not supported").
+          // CJS uses Node's native require, so those work.
+          format: lambdaNode.OutputFormat.CJS,
           target: "node20",
           minify: true,
           sourceMap: true,
-          // bcryptjs + jsonwebtoken bundle fine; nothing to externalise.
         },
       });
       // Data-plane access. Small app: grant read/write on all tables.
