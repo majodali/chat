@@ -1,0 +1,82 @@
+name: Deploy
+
+# Deploys Liddle Chat to AWS.
+#
+# Auth uses GitHub OIDC — no long-lived AWS keys are stored in the repo.
+# See docs/CI_DEPLOY.md for the one-time AWS role + repo secrets setup.
+
+on:
+  workflow_dispatch: {} # manual "Run workflow" button
+  push:
+    branches: [main]
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "infra/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/deploy.yml"
+
+# Never run two deploys at once.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  id-token: write # required to request the OIDC token
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    env:
+      AWS_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+      CDK_DEFAULT_REGION: ${{ vars.AWS_REGION || 'us-east-1' }}
+      DOMAIN_NAME: ${{ vars.DOMAIN_NAME }}
+      INCLUDE_WWW: ${{ vars.INCLUDE_WWW || 'false' }}
+      ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME }}
+      ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Build frontend
+        run: npm run build:frontend
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Bootstrap CDK (idempotent)
+        working-directory: infra
+        run: npx cdk bootstrap
+
+      - name: Deploy
+        working-directory: infra
+        run: npx cdk deploy --require-approval never --outputs-file cdk-outputs.json
+
+      - name: Show stack outputs
+        if: always()
+        working-directory: infra
+        run: |
+          if [ -f cdk-outputs.json ]; then
+            echo "### Liddle Chat deployed :rocket:" >> "$GITHUB_STEP_SUMMARY"
+            echo '```json' >> "$GITHUB_STEP_SUMMARY"
+            cat cdk-outputs.json >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi

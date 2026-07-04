@@ -86,6 +86,14 @@ LiddleChat.WebSocketUrl   = wss://yyyy.execute-api.us-east-1.amazonaws.com/prod
 4. They open the same URL, sign in, and start chatting. Tap **＋** to start a
    direct message or a group.
 
+## Prefer push-button deploys? Use GitHub Actions
+
+Instead of deploying from your laptop, you can have GitHub deploy for you on
+every push to `main` (or via a manual button) — using short-lived OIDC
+credentials, with no AWS keys stored anywhere. See
+**[docs/CI_DEPLOY.md](./docs/CI_DEPLOY.md)** for the one-time role + secrets
+setup. After that, the manual steps below aren't needed for routine updates.
+
 ## 7. Updating the app later
 
 ```bash
