@@ -3,7 +3,13 @@ import { api } from "../api";
 import type { PublicUser } from "../types";
 import { Avatar } from "./Avatar";
 
-export function AdminModal({ onClose }: { onClose: () => void }) {
+export function AdminModal({
+  onClose,
+  onOpenDiagnostics,
+}: {
+  onClose: () => void;
+  onOpenDiagnostics: () => void;
+}) {
   const [users, setUsers] = useState<PublicUser[]>([]);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -55,6 +61,10 @@ export function AdminModal({ onClose }: { onClose: () => void }) {
             ✕
           </button>
         </header>
+
+        <button className="secondary-btn full-width" onClick={onOpenDiagnostics}>
+          🔧 Open diagnostics
+        </button>
 
         <form className="group-form" onSubmit={submit}>
           <p className="field-label">Create a new account</p>

@@ -7,6 +7,7 @@ import { MessageView } from "./MessageView";
 import { Composer } from "./Composer";
 import { NewChatModal } from "./NewChatModal";
 import { AdminModal } from "./AdminModal";
+import { Diagnostics } from "./Diagnostics";
 
 let clientCounter = 0;
 const nextClientId = () => `c${Date.now()}-${clientCounter++}`;
@@ -46,6 +47,7 @@ export function Chat({
   const [connected, setConnected] = useState(false);
   const [showNewChat, setShowNewChat] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const socketRef = useRef<ChatSocket | null>(null);
@@ -303,7 +305,16 @@ export function Chat({
         />
       )}
       {showAdmin && user.role === "admin" && (
-        <AdminModal onClose={() => setShowAdmin(false)} />
+        <AdminModal
+          onClose={() => setShowAdmin(false)}
+          onOpenDiagnostics={() => {
+            setShowAdmin(false);
+            setShowDiagnostics(true);
+          }}
+        />
+      )}
+      {showDiagnostics && user.role === "admin" && (
+        <Diagnostics user={user} onClose={() => setShowDiagnostics(false)} />
       )}
     </div>
   );
