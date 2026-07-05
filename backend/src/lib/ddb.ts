@@ -7,6 +7,7 @@ import {
   QueryCommand,
   DeleteCommand,
   BatchGetCommand,
+  UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { env, INDEXES } from "./env";
 import type { User, Room, RoomMember, Message, Connection } from "./types";
@@ -46,6 +47,21 @@ export async function putUser(user: User): Promise<void> {
       // usernameLower is unique-enforced at the app layer via getUserByUsername;
       // this guards against overwriting an existing userId.
       ConditionExpression: "attribute_not_exists(userId)",
+    })
+  );
+}
+
+export async function updateUserPassword(
+  userId: string,
+  passwordHash: string
+): Promise<void> {
+  await ddb.send(
+    new UpdateCommand({
+      TableName: env.usersTable,
+      Key: { userId },
+      UpdateExpression: "SET passwordHash = :h",
+      ExpressionAttributeValues: { ":h": passwordHash },
+      ConditionExpression: "attribute_exists(userId)",
     })
   );
 }

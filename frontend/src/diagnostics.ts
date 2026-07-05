@@ -4,8 +4,9 @@
 //
 // - "smoke" steps are non-mutating (safe to run on every deploy).
 // - "full" steps also create a throwaway Diagnostics room + messages.
-import { api, uploadImage, getToken } from "./api";
+import { api, uploadImage, getToken, ApiError } from "./api";
 import { loadRuntimeConfig } from "./config";
+import { notificationsSupported } from "./notifications";
 import type { PublicUser, ServerEvent } from "./types";
 
 export type StepKind = "smoke" | "full";
@@ -165,6 +166,52 @@ export const STEPS: Step[] = [
       const { uploadUrl, key } = await api.getUploadUrl("image/png");
       assert(uploadUrl?.startsWith("http"), "no uploadUrl returned");
       assert(!!key, "no object key returned");
+    },
+  },
+  {
+    id: "password-endpoint",
+    name: "Change-password endpoint enforces current password",
+    kind: "smoke",
+    // Non-mutating: an intentionally wrong current password must be rejected,
+    // which verifies the route + auth + validation without changing anything.
+    run: async () => {
+      let rejected = false;
+      try {
+        await api.changePassword(
+          `wrong-${Date.now()}-${Math.random()}`,
+          "diagnostic-check"
+        );
+      } catch (err) {
+        if (err instanceof ApiError && (err.status === 401 || err.status === 400)) {
+          rejected = true;
+        } else {
+          throw err;
+        }
+      }
+      assert(rejected, "endpoint did not reject an incorrect current password");
+    },
+  },
+  {
+    id: "notif-sound",
+    name: "Notification sound engine (Web Audio)",
+    kind: "smoke",
+    run: async () => {
+      const Ctor =
+        window.AudioContext ||
+        (window as unknown as { webkitAudioContext?: typeof AudioContext })
+          .webkitAudioContext;
+      assert(Ctor, "Web Audio API unavailable — message sounds won't play");
+    },
+  },
+  {
+    id: "notif-desktop",
+    name: "Desktop notifications available",
+    kind: "full",
+    run: async () => {
+      assert(
+        notificationsSupported(),
+        "Notification API unavailable — desktop alerts need a secure (https) context. In-app badges, tab title, and sound still work."
+      );
     },
   },
   {

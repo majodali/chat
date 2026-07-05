@@ -8,6 +8,7 @@ import { Composer } from "./Composer";
 import { NewChatModal } from "./NewChatModal";
 import { AdminModal } from "./AdminModal";
 import { Diagnostics } from "./Diagnostics";
+import { ChangePasswordModal } from "./ChangePasswordModal";
 import { roomDisplayName } from "../utils";
 import {
   setUnreadTitle,
@@ -58,6 +59,7 @@ export function Chat({
   const [showNewChat, setShowNewChat] = useState(false);
   const [showAdmin, setShowAdmin] = useState(false);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [unreadByRoom, setUnreadByRoom] = useState<Record<string, number>>({});
   const [notifPerm, setNotifPerm] = useState(getNotifyPermission());
@@ -360,6 +362,7 @@ export function Chat({
         onSelectRoom={selectRoom}
         onNewChat={() => setShowNewChat(true)}
         onOpenAdmin={() => setShowAdmin(true)}
+        onOpenPassword={() => setShowPassword(true)}
         onLogout={onLogout}
       />
 
@@ -400,6 +403,9 @@ export function Chat({
       )}
       {showDiagnostics && user.role === "admin" && (
         <Diagnostics user={user} onClose={() => setShowDiagnostics(false)} />
+      )}
+      {showPassword && (
+        <ChangePasswordModal onClose={() => setShowPassword(false)} />
       )}
     </div>
   );

@@ -50,6 +50,11 @@ export const api = {
       password,
     }),
   me: () => request<{ user: PublicUser }>("GET", "/me"),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<{ ok: boolean }>("POST", "/me/password", {
+      currentPassword,
+      newPassword,
+    }),
   listUsers: () => request<{ users: PublicUser[] }>("GET", "/users"),
   createUser: (input: {
     username: string;

@@ -153,6 +153,7 @@ export class ChatStack extends Stack {
     // HTTP handlers
     const loginFn = makeFn("LoginFn", "http/login.ts");
     const meFn = makeFn("MeFn", "http/me.ts");
+    const changePasswordFn = makeFn("ChangePasswordFn", "http/changePassword.ts");
     const listUsersFn = makeFn("ListUsersFn", "http/listUsers.ts");
     const adminCreateUserFn = makeFn("AdminCreateUserFn", "http/adminCreateUser.ts");
     const listRoomsFn = makeFn("ListRoomsFn", "http/listRooms.ts");
@@ -198,6 +199,7 @@ export class ChatStack extends Stack {
 
     route("Login", apigw.HttpMethod.POST, "/login", loginFn);
     route("Me", apigw.HttpMethod.GET, "/me", meFn);
+    route("ChangePassword", apigw.HttpMethod.POST, "/me/password", changePasswordFn);
     route("Users", apigw.HttpMethod.GET, "/users", listUsersFn);
     route("AdminUsers", apigw.HttpMethod.POST, "/admin/users", adminCreateUserFn);
     route("Rooms", apigw.HttpMethod.GET, "/rooms", listRoomsFn);

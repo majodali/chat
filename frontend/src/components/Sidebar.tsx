@@ -17,6 +17,7 @@ export function Sidebar({
   onSelectRoom,
   onNewChat,
   onOpenAdmin,
+  onOpenPassword,
   onLogout,
 }: {
   user: PublicUser;
@@ -33,6 +34,7 @@ export function Sidebar({
   onSelectRoom: (roomId: string) => void;
   onNewChat: () => void;
   onOpenAdmin: () => void;
+  onOpenPassword: () => void;
   onLogout: () => void;
 }) {
   return (
@@ -111,6 +113,9 @@ export function Sidebar({
             Admin
           </button>
         )}
+        <button className="text-btn" onClick={onOpenPassword}>
+          Password
+        </button>
         <button className="text-btn" onClick={onLogout}>
           Sign out
         </button>
