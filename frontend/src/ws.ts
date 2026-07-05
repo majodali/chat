@@ -25,6 +25,9 @@ export class ChatSocket {
     ws.onopen = () => {
       this.reconnectDelay = 1000;
       this.emitStatus(true);
+      // Ask the server for the current presence snapshot. This must happen
+      // after the socket is open (the server can't push during $connect).
+      this.send({ action: "hello" });
     };
     ws.onmessage = (ev) => {
       try {
