@@ -216,6 +216,24 @@ input {
 .icon-btn:hover {
   background: var(--border);
 }
+.head-actions {
+  display: flex;
+  gap: 6px;
+}
+.notif-banner {
+  margin: 0 8px 4px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--brand) 12%, transparent);
+  color: var(--brand-dim);
+  font-weight: 600;
+  font-size: 13px;
+  text-align: center;
+}
+.notif-banner:hover {
+  background: color-mix(in srgb, var(--brand) 20%, transparent);
+}
 .room-list {
   flex: 1;
   overflow-y: auto;
@@ -243,6 +261,20 @@ input {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  flex: 1;
+}
+.unread-badge {
+  flex-shrink: 0;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
 }
 .room-name {
   font-weight: 600;

@@ -8,6 +8,16 @@ import { Composer } from "./Composer";
 import { NewChatModal } from "./NewChatModal";
 import { AdminModal } from "./AdminModal";
 import { Diagnostics } from "./Diagnostics";
+import { roomDisplayName } from "../utils";
+import {
+  setUnreadTitle,
+  playPing,
+  showNotification,
+  getNotifyPermission,
+  requestNotifyPermission,
+  isSoundEnabled,
+  setSoundEnabled,
+} from "../notifications";
 
 let clientCounter = 0;
 const nextClientId = () => `c${Date.now()}-${clientCounter++}`;
@@ -49,10 +59,22 @@ export function Chat({
   const [showAdmin, setShowAdmin] = useState(false);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [unreadByRoom, setUnreadByRoom] = useState<Record<string, number>>({});
+  const [notifPerm, setNotifPerm] = useState(getNotifyPermission());
+  const [soundOn, setSoundOn] = useState(isSoundEnabled());
 
   const socketRef = useRef<ChatSocket | null>(null);
   const typingTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const loadedRooms = useRef<Set<string>>(new Set());
+  // Refs so the once-subscribed socket handler always sees current values.
+  const activeRoomIdRef = useRef<string | null>(activeRoomId);
+  const roomsRef = useRef<Room[]>(rooms);
+  useEffect(() => {
+    activeRoomIdRef.current = activeRoomId;
+  }, [activeRoomId]);
+  useEffect(() => {
+    roomsRef.current = rooms;
+  }, [rooms]);
 
   const refreshRooms = useCallback(async () => {
     const { rooms } = await api.listRooms();
@@ -105,6 +127,31 @@ export function Chat({
             }
             return prev;
           });
+          // Notifications (never for our own messages).
+          if (m.senderId !== user.userId) {
+            const foreground =
+              document.visibilityState === "visible" && document.hasFocus();
+            const isActive = m.roomId === activeRoomIdRef.current;
+            if (!(foreground && isActive)) {
+              setUnreadByRoom((prev) => ({
+                ...prev,
+                [m.roomId]: (prev[m.roomId] ?? 0) + 1,
+              }));
+              playPing();
+              if (!foreground) {
+                const room = roomsRef.current.find((r) => r.roomId === m.roomId);
+                const where =
+                  room && room.type === "group"
+                    ? `${m.senderName} · ${roomDisplayName(room, user.userId)}`
+                    : m.senderName;
+                showNotification(where, {
+                  body: m.kind === "image" ? "📷 Photo" : m.text ?? "",
+                  tag: m.roomId,
+                  onClick: () => setActiveRoomId(m.roomId),
+                });
+              }
+            }
+          }
           break;
         }
         case "presenceSnapshot":
@@ -143,8 +190,31 @@ export function Chat({
           break;
       }
     },
-    [refreshRooms]
+    [refreshRooms, user.userId]
   );
+
+  // Keep the tab title's unread count in sync.
+  useEffect(() => {
+    const total = Object.values(unreadByRoom).reduce((a, b) => a + b, 0);
+    setUnreadTitle(total);
+  }, [unreadByRoom]);
+
+  // Clear the active room's unread when the tab regains focus/visibility.
+  useEffect(() => {
+    const clearActive = () => {
+      if (document.visibilityState !== "visible") return;
+      const id = activeRoomIdRef.current;
+      if (id) {
+        setUnreadByRoom((prev) => (prev[id] ? { ...prev, [id]: 0 } : prev));
+      }
+    };
+    window.addEventListener("focus", clearActive);
+    document.addEventListener("visibilitychange", clearActive);
+    return () => {
+      window.removeEventListener("focus", clearActive);
+      document.removeEventListener("visibilitychange", clearActive);
+    };
+  }, []);
 
   // Load history when a room becomes active for the first time.
   useEffect(() => {
@@ -170,7 +240,17 @@ export function Chat({
 
   function selectRoom(roomId: string) {
     setActiveRoomId(roomId);
+    setUnreadByRoom((prev) => (prev[roomId] ? { ...prev, [roomId]: 0 } : prev));
     if (window.innerWidth < 720) setSidebarOpen(false);
+  }
+
+  async function enableNotifications() {
+    setNotifPerm(await requestNotifyPermission());
+  }
+  function toggleSound() {
+    const next = !soundOn;
+    setSoundOn(next);
+    setSoundEnabled(next);
   }
 
   async function sendText(text: string) {
@@ -270,8 +350,13 @@ export function Chat({
         rooms={rooms}
         activeRoomId={activeRoomId}
         online={online}
+        unread={unreadByRoom}
         open={sidebarOpen}
         connected={connected}
+        notifPermission={notifPerm}
+        soundOn={soundOn}
+        onEnableNotifications={enableNotifications}
+        onToggleSound={toggleSound}
         onSelectRoom={selectRoom}
         onNewChat={() => setShowNewChat(true)}
         onOpenAdmin={() => setShowAdmin(true)}
