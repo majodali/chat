@@ -166,6 +166,7 @@ export class ChatStack extends Stack {
     const wsDisconnectFn = makeFn("WsDisconnectFn", "ws/disconnect.ts");
     const wsSendMessageFn = makeFn("WsSendMessageFn", "ws/sendMessage.ts");
     const wsTypingFn = makeFn("WsTypingFn", "ws/typing.ts");
+    const wsHelloFn = makeFn("WsHelloFn", "ws/hello.ts");
 
     // ---------------------------------------------------------------
     // HTTP API
@@ -239,6 +240,12 @@ export class ChatStack extends Stack {
         wsTypingFn
       ),
     });
+    wsApi.addRoute("hello", {
+      integration: new apigwInteg.WebSocketLambdaIntegration(
+        "HelloInteg",
+        wsHelloFn
+      ),
+    });
 
     const wsStage = new apigw.WebSocketStage(this, "WsStage", {
       webSocketApi: wsApi,
@@ -247,7 +254,13 @@ export class ChatStack extends Stack {
     });
 
     // WS handlers push back to clients via the Management API.
-    for (const fn of [wsConnectFn, wsDisconnectFn, wsSendMessageFn, wsTypingFn]) {
+    for (const fn of [
+      wsConnectFn,
+      wsDisconnectFn,
+      wsSendMessageFn,
+      wsTypingFn,
+      wsHelloFn,
+    ]) {
       wsApi.grantManageConnections(fn);
     }
 
