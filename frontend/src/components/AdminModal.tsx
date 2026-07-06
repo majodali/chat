@@ -3,10 +3,88 @@ import { api } from "../api";
 import type { PublicUser } from "../types";
 import { Avatar } from "./Avatar";
 
+function AdminUserRow({ u, isSelf }: { u: PublicUser; isSelf: boolean }) {
+  const [resetting, setResetting] = useState(false);
+  const [pw, setPw] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  async function save() {
+    setBusy(true);
+    setMsg(null);
+    try {
+      await api.adminResetPassword(u.userId, pw);
+      setMsg({ ok: true, text: `New password set for ${u.displayName}` });
+      setPw("");
+      setResetting(false);
+    } catch (err) {
+      setMsg({
+        ok: false,
+        text: err instanceof Error ? err.message : "Could not reset password",
+      });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="user-row-wrap">
+      <div className="user-row">
+        <Avatar name={u.displayName} size={32} />
+        <span>{u.displayName}</span>
+        {u.role === "admin" && <span className="badge">admin</span>}
+        {!isSelf && !resetting && (
+          <button
+            className="text-btn row-action"
+            onClick={() => {
+              setResetting(true);
+              setMsg(null);
+            }}
+          >
+            Reset password
+          </button>
+        )}
+      </div>
+      {resetting && (
+        <div className="reset-row">
+          <input
+            type="text"
+            placeholder="New password (min 6)"
+            value={pw}
+            autoFocus
+            onChange={(e) => setPw(e.target.value)}
+          />
+          <button
+            className="primary-btn sm"
+            disabled={busy || pw.length < 6}
+            onClick={save}
+          >
+            {busy ? "…" : "Save"}
+          </button>
+          <button
+            className="secondary-btn sm"
+            onClick={() => {
+              setResetting(false);
+              setPw("");
+            }}
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+      {msg && (
+        <div className={msg.ok ? "notice-banner" : "error-banner"}>{msg.text}</div>
+      )}
+    </div>
+  );
+}
+
 export function AdminModal({
+  currentUserId,
   onClose,
   onOpenDiagnostics,
 }: {
+  currentUserId: string;
   onClose: () => void;
   onOpenDiagnostics: () => void;
 }) {
@@ -109,11 +187,11 @@ export function AdminModal({
         <p className="field-label">Everyone ({users.length})</p>
         <div className="user-list">
           {users.map((u) => (
-            <div key={u.userId} className="user-row">
-              <Avatar name={u.displayName} size={32} />
-              <span>{u.displayName}</span>
-              {u.role === "admin" && <span className="badge">admin</span>}
-            </div>
+            <AdminUserRow
+              key={u.userId}
+              u={u}
+              isSelf={u.userId === currentUserId}
+            />
           ))}
         </div>
       </div>

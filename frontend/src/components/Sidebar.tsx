@@ -7,22 +7,34 @@ export function Sidebar({
   rooms,
   activeRoomId,
   online,
+  unread,
   open,
   connected,
+  notifPermission,
+  soundOn,
+  onEnableNotifications,
+  onToggleSound,
   onSelectRoom,
   onNewChat,
   onOpenAdmin,
+  onOpenPassword,
   onLogout,
 }: {
   user: PublicUser;
   rooms: Room[];
   activeRoomId: string | null;
   online: Set<string>;
+  unread: Record<string, number>;
   open: boolean;
   connected: boolean;
+  notifPermission: NotificationPermission;
+  soundOn: boolean;
+  onEnableNotifications: () => void;
+  onToggleSound: () => void;
   onSelectRoom: (roomId: string) => void;
   onNewChat: () => void;
   onOpenAdmin: () => void;
+  onOpenPassword: () => void;
   onLogout: () => void;
 }) {
   return (
@@ -35,10 +47,25 @@ export function Sidebar({
             title={connected ? "Connected" : "Reconnecting…"}
           />
         </div>
-        <button className="icon-btn" title="New chat" onClick={onNewChat}>
-          ＋
-        </button>
+        <div className="head-actions">
+          <button
+            className="icon-btn"
+            title={soundOn ? "Mute sound" : "Unmute sound"}
+            onClick={onToggleSound}
+          >
+            {soundOn ? "🔔" : "🔇"}
+          </button>
+          <button className="icon-btn" title="New chat" onClick={onNewChat}>
+            ＋
+          </button>
+        </div>
       </header>
+
+      {notifPermission === "default" && (
+        <button className="notif-banner" onClick={onEnableNotifications}>
+          🔔 Turn on notifications
+        </button>
+      )}
 
       <div className="room-list">
         {rooms.length === 0 && (
@@ -47,6 +74,7 @@ export function Sidebar({
         {rooms.map((room) => {
           const other = room.type === "dm" ? otherMember(room, user.userId) : null;
           const isOnline = other ? online.has(other.userId) : undefined;
+          const count = unread[room.roomId] ?? 0;
           return (
             <button
               key={room.roomId}
@@ -69,6 +97,9 @@ export function Sidebar({
                       : "offline"}
                 </span>
               </div>
+              {count > 0 && (
+                <span className="unread-badge">{count > 99 ? "99+" : count}</span>
+              )}
             </button>
           );
         })}
@@ -82,6 +113,9 @@ export function Sidebar({
             Admin
           </button>
         )}
+        <button className="text-btn" onClick={onOpenPassword}>
+          Password
+        </button>
         <button className="text-btn" onClick={onLogout}>
           Sign out
         </button>

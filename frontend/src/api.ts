@@ -50,6 +50,11 @@ export const api = {
       password,
     }),
   me: () => request<{ user: PublicUser }>("GET", "/me"),
+  changePassword: (currentPassword: string, newPassword: string) =>
+    request<{ ok: boolean }>("POST", "/me/password", {
+      currentPassword,
+      newPassword,
+    }),
   listUsers: () => request<{ users: PublicUser[] }>("GET", "/users"),
   createUser: (input: {
     username: string;
@@ -57,6 +62,12 @@ export const api = {
     displayName?: string;
     role?: "admin" | "member";
   }) => request<{ user: PublicUser }>("POST", "/admin/users", input),
+  adminResetPassword: (userId: string, newPassword: string) =>
+    request<{ ok: boolean }>(
+      "POST",
+      `/admin/users/${userId}/password`,
+      { newPassword }
+    ),
   listRooms: () => request<{ rooms: Room[] }>("GET", "/rooms"),
   createGroup: (name: string, memberIds: string[]) =>
     request<{ room: Room }>("POST", "/rooms", { name, memberIds }),

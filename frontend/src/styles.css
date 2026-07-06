@@ -216,6 +216,24 @@ input {
 .icon-btn:hover {
   background: var(--border);
 }
+.head-actions {
+  display: flex;
+  gap: 6px;
+}
+.notif-banner {
+  margin: 0 8px 4px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--brand) 12%, transparent);
+  color: var(--brand-dim);
+  font-weight: 600;
+  font-size: 13px;
+  text-align: center;
+}
+.notif-banner:hover {
+  background: color-mix(in srgb, var(--brand) 20%, transparent);
+}
 .room-list {
   flex: 1;
   overflow-y: auto;
@@ -243,6 +261,20 @@ input {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  flex: 1;
+}
+.unread-badge {
+  flex-shrink: 0;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--brand);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
 }
 .room-name {
   font-weight: 600;
@@ -589,13 +621,43 @@ button.user-row:hover,
   background: var(--panel-2);
 }
 .badge {
-  margin-left: auto;
   font-size: 11px;
   background: color-mix(in srgb, var(--brand) 18%, transparent);
   color: var(--brand-dim);
   padding: 2px 8px;
   border-radius: 8px;
   font-weight: 700;
+}
+.user-row-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 0;
+}
+.row-action {
+  margin-left: auto;
+  white-space: nowrap;
+}
+.reset-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 0 10px 4px 54px;
+}
+.reset-row input {
+  flex: 1;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel-2);
+  color: var(--text);
+  font-size: 14px;
+}
+.primary-btn.sm,
+.secondary-btn.sm {
+  padding: 8px 12px;
+  font-size: 13px;
+  border-radius: 10px;
 }
 .group-form {
   display: flex;
