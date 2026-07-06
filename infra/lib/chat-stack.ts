@@ -156,6 +156,10 @@ export class ChatStack extends Stack {
     const changePasswordFn = makeFn("ChangePasswordFn", "http/changePassword.ts");
     const listUsersFn = makeFn("ListUsersFn", "http/listUsers.ts");
     const adminCreateUserFn = makeFn("AdminCreateUserFn", "http/adminCreateUser.ts");
+    const adminResetPasswordFn = makeFn(
+      "AdminResetPasswordFn",
+      "http/adminResetPassword.ts"
+    );
     const listRoomsFn = makeFn("ListRoomsFn", "http/listRooms.ts");
     const createGroupFn = makeFn("CreateGroupFn", "http/createGroup.ts");
     const openDmFn = makeFn("OpenDmFn", "http/openDm.ts");
@@ -202,6 +206,12 @@ export class ChatStack extends Stack {
     route("ChangePassword", apigw.HttpMethod.POST, "/me/password", changePasswordFn);
     route("Users", apigw.HttpMethod.GET, "/users", listUsersFn);
     route("AdminUsers", apigw.HttpMethod.POST, "/admin/users", adminCreateUserFn);
+    route(
+      "AdminResetPassword",
+      apigw.HttpMethod.POST,
+      "/admin/users/{userId}/password",
+      adminResetPasswordFn
+    );
     route("Rooms", apigw.HttpMethod.GET, "/rooms", listRoomsFn);
     route("CreateGroup", apigw.HttpMethod.POST, "/rooms", createGroupFn);
     route("OpenDm", apigw.HttpMethod.POST, "/dms", openDmFn);

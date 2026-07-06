@@ -394,6 +394,7 @@ export function Chat({
       )}
       {showAdmin && user.role === "admin" && (
         <AdminModal
+          currentUserId={user.userId}
           onClose={() => setShowAdmin(false)}
           onOpenDiagnostics={() => {
             setShowAdmin(false);

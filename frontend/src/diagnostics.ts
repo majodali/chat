@@ -192,6 +192,26 @@ export const STEPS: Step[] = [
     },
   },
   {
+    id: "admin-reset-endpoint",
+    name: "Admin password-reset endpoint validates",
+    kind: "smoke",
+    // Non-mutating: a too-short password is rejected before any change, which
+    // verifies the admin-only route + validation without resetting anyone.
+    run: async (_ctx, user) => {
+      let rejected = false;
+      try {
+        await api.adminResetPassword(user.userId, "x");
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 400) {
+          rejected = true;
+        } else {
+          throw err;
+        }
+      }
+      assert(rejected, "endpoint did not reject a too-short password");
+    },
+  },
+  {
     id: "notif-sound",
     name: "Notification sound engine (Web Audio)",
     kind: "smoke",
