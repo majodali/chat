@@ -60,7 +60,11 @@ export function Chat({
   const [showAdmin, setShowAdmin] = useState(false);
   const [showDiagnostics, setShowDiagnostics] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  // Start hidden on phones/small windows; the sidebar is a full-screen overlay
+  // there and would otherwise cover the conversation on load.
+  const [sidebarOpen, setSidebarOpen] = useState(
+    () => typeof window === "undefined" || window.innerWidth > 768
+  );
   const [unreadByRoom, setUnreadByRoom] = useState<Record<string, number>>({});
   const [notifPerm, setNotifPerm] = useState(getNotifyPermission());
   const [soundOn, setSoundOn] = useState(isSoundEnabled());
@@ -243,7 +247,7 @@ export function Chat({
   function selectRoom(roomId: string) {
     setActiveRoomId(roomId);
     setUnreadByRoom((prev) => (prev[roomId] ? { ...prev, [roomId]: 0 } : prev));
-    if (window.innerWidth < 720) setSidebarOpen(false);
+    if (window.innerWidth <= 768) setSidebarOpen(false);
   }
 
   async function enableNotifications() {
@@ -346,7 +350,14 @@ export function Chat({
     : [];
 
   return (
-    <div className="chat-layout">
+    <div className={`chat-layout ${sidebarOpen ? "sidebar-open" : ""}`}>
+      {sidebarOpen && (
+        <div
+          className="sidebar-scrim"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
       <Sidebar
         user={user}
         rooms={rooms}

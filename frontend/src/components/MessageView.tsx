@@ -37,7 +37,10 @@ export function MessageView({
         </button>
         <div className="empty-state">
           <div className="empty-emoji">👋</div>
-          <p>Pick a chat on the left, or start a new one.</p>
+          <p>Pick a chat to start messaging.</p>
+          <button className="primary-btn open-chats-btn" onClick={onToggleSidebar}>
+            Open chats
+          </button>
         </div>
       </div>
     );

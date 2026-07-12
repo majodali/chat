@@ -41,6 +41,15 @@ body,
   height: 100%;
   margin: 0;
 }
+/* Use the dynamic viewport height on mobile so the browser's address bar
+   showing/hiding doesn't cut off the message composer. */
+@supports (height: 100dvh) {
+  html,
+  body,
+  #root {
+    height: 100dvh;
+  }
+}
 body {
   background: var(--bg);
   color: var(--text);
@@ -823,8 +832,27 @@ button.user-row:hover,
   margin: 12px 0 0;
 }
 
+/* Scrim behind the open sidebar — hidden on desktop, shown as a tap-to-close
+   backdrop on mobile (see media query). */
+.sidebar-scrim {
+  display: none;
+}
+/* "Open chats" button in the empty state — desktop always shows the sidebar,
+   so it's only useful on mobile. */
+.open-chats-btn {
+  display: none;
+}
+
+/* Safe-area padding for notched phones (needs viewport-fit=cover). */
+.composer {
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+}
+.sidebar-foot {
+  padding-bottom: calc(12px + env(safe-area-inset-bottom));
+}
+
 /* ---------- Responsive ---------- */
-@media (max-width: 720px) {
+@media (max-width: 768px) {
   .chat-layout {
     grid-template-columns: 1fr;
     position: relative;
@@ -832,11 +860,11 @@ button.user-row:hover,
   .sidebar {
     position: absolute;
     inset: 0 auto 0 0;
-    width: 84%;
-    max-width: 320px;
-    z-index: 20;
+    width: min(86%, 340px);
+    z-index: 30;
     transition: transform 0.25s ease;
     box-shadow: var(--shadow);
+    padding-top: env(safe-area-inset-top);
   }
   .sidebar.closed {
     transform: translateX(-100%);
@@ -844,10 +872,42 @@ button.user-row:hover,
   .sidebar.open {
     transform: translateX(0);
   }
+  .chat-layout.sidebar-open .sidebar-scrim {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 20;
+    background: rgba(0, 0, 0, 0.4);
+    animation: fade-in 0.2s ease;
+  }
+  .conv-head {
+    padding-top: calc(12px + env(safe-area-inset-top));
+  }
   .menu-btn {
     display: grid;
   }
+  .empty-view {
+    position: relative;
+  }
+  .empty-view .menu-btn {
+    position: absolute;
+    top: calc(12px + env(safe-area-inset-top));
+    left: 12px;
+  }
+  .open-chats-btn {
+    display: inline-block;
+    margin-top: 14px;
+  }
   .bubble-wrap {
     max-width: 82%;
+  }
+  .msg-image {
+    max-width: min(72vw, 260px);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
   }
 }
